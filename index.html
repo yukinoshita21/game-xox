@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon XOX Game</title>
+    <style>
+        @keyframes neon-flicker {
+            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+                opacity: 1;
+            }
+            20%, 24%, 55% {
+                opacity: 0.4;
+            }
+            22% {
+                opacity: 0.1;
+            }
+        }
+
+        @keyframes neon-colors {
+            0% { color: #f00; text-shadow: 0 0 5px #f00, 0 0 10px #f00, 0 0 20px #f00, 0 0 40px #f00; }
+            25% { color: #0f0; text-shadow: 0 0 5px #0f0, 0 0 10px #0f0, 0 0 20px #0f0, 0 0 40px #0f0; }
+            50% { color: #00f; text-shadow: 0 0 5px #00f, 0 0 10px #00f, 0 0 20px #00f, 0 0 40px #00f; }
+            75% { color: #ff0; text-shadow: 0 0 5px #ff0, 0 0 10px #ff0, 0 0 20px #ff0, 0 0 40px #ff0; }
+            100% { color: #f0f; text-shadow: 0 0 5px #f0f, 0 0 10px #f0f, 0 0 20px #f0f, 0 0 40px #f0f; }
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2em;
+            cursor: pointer;
+            border: 2px solid #fff;
+            transition: all 0.3s ease;
+        }
+        .cell:hover {
+            background-color: #333;
+        }
+        .neon {
+            animation: neon-flicker 1.5s infinite alternate, neon-colors 5s infinite;
+        }
+        .difficulty-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="difficulty-container">
+        <label for="difficulty">Pilih Kesulitan: </label>
+        <select id="difficulty">
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+            <option value="brutal">Brutal</option>
+        </select>
+    </div>
+    <div class="board">
+        <div class="cell" onclick="makeMove(this)"></div>
+        <div class="cell" onclick="makeMove(this)"></div>
+        <div class="cell" onclick="makeMove(this)"></div>
+        <div class="cell" onclick="makeMove(this)"></div>
+        <div class="cell" onclick="makeMove(this)"></div>
+        <div class="cell" onclick="makeMove(this)"></div>
+        <div class="cell" onclick="makeMove(this)"></div>
+        <div class="cell" onclick="makeMove(this)"></div>
+        <div class="cell" onclick="makeMove(this)"></div>
+    </div>
+    <div>
+        <p>Skor Player: <span id="playerScore">0</span></p>
+        <p>Skor Bot: <span id="botScore">0</span></p>
+    </div>
+    <script>
+        let currentPlayer = 'X';
+        let playerScore = 0;
+        let botScore = 0;
+
+        function makeMove(cell) {
+            if (cell.innerHTML === '') {
+                cell.innerHTML = currentPlayer;
+                cell.classList.add('neon');
+                if (checkWin(currentPlayer)) {
+                    if (currentPlayer === 'X') {
+                        playerScore++;
+                        alert('Player menang!');
+                    } else {
+                        botScore++;
+                        alert('Bot menang!');
+                    }
+                    updateScore();
+                    resetBoard();
+                } else if (isDraw()) {
+                    alert('Seri!');
+                    resetBoard();
+                } else {
+                    if (currentPlayer === 'X') {
+                        currentPlayer = 'O';
+                        setTimeout(makeAIMove, 500);
+                    } else {
+                        currentPlayer = 'X';
+                    }
+                }
+            }
+        }
+
+        function makeAIMove() {
+            let difficulty = document.getElementById('difficulty').value;
+            let emptyCells = Array.from(document.getElementsByClassName('cell')).filter(cell => cell.innerHTML === '');
+            if (emptyCells.length === 0) return;
+
+            let cell;
+            if (difficulty === 'easy') {
+                cell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            } else if (difficulty === 'medium') {
+                cell = findBestMove(emptyCells);
+            } else if (difficulty === 'hard') {
+                cell = findBestMoveHard(emptyCells);
+            } else if (difficulty === 'brutal') {
+                cell = findBestMoveBrutal(emptyCells);
+            }
+
+            if (cell) {
+                cell.innerHTML = currentPlayer;
+                cell.classList.add('neon');
+                if (checkWin(currentPlayer)) {
+                    botScore++;
+                    alert('Bot menang!');
+                    updateScore();
+                    resetBoard();
+                } else if (isDraw()) {
+                    alert('Seri!');
+                    resetBoard();
+                } else {
+                    currentPlayer = 'X';
+                }
+            }
+        }
+
+        function findBestMove(emptyCells) {
+            // Implementasi AI sederhana untuk kesulitan medium
+            for (let cell of emptyCells) {
+                cell.innerHTML = 'O';
+                if (checkWin('O')) {
+                    cell.innerHTML = '';
+                    return cell;
+                }
+                cell.innerHTML = '';
+            }
+            for (let cell of emptyCells) {
+                cell.innerHTML = 'X';
+                if (checkWin('X')) {
+                    cell.innerHTML = '';
+                    return cell;
+                }
+                cell.innerHTML = '';
+            }
+            return emptyCells[Math.floor(Math.random() * emptyCells.length)];
+        }
+
+        function findBestMoveHard(emptyCells) {
+            // Implementasi AI untuk kesulitan hard
+            // AI akan mencoba untuk memblokir langkah player dan membuat langkah yang lebih strategis
+            for (let cell of emptyCells) {
+                cell.innerHTML = 'O';
+                if (checkWin('O')) {
+                    cell.innerHTML = '';
+                    return cell;
+                }
+                cell.innerHTML = '';
+            }
+            for (let cell of emptyCells) {
+                cell.innerHTML = 'X';
+                if (checkWin('X')) {
+                    cell.innerHTML = '';
+                    return cell;
+                }
+                cell.innerHTML = '';
+            }
+            return emptyCells[Math.floor(Math.random() * emptyCells.length)];
+        }
+
+        function findBestMoveBrutal(emptyCells) {
+            // Implementasi AI untuk kesulitan brutal
+            // AI akan selalu membuat langkah terbaik untuk menang
+            for (let cell of emptyCells) {
+                cell.innerHTML = 'O';
+                if (checkWin('O')) {
+                    cell.innerHTML = '';
+                    return cell;
+                }
+                cell.innerHTML = '';
+            }
+            for (let cell of emptyCells) {
+                cell.innerHTML = 'X';
+                if (checkWin('X')) {
+                    cell.innerHTML = '';
+                    return cell;
+                }
+                cell.innerHTML = '';
+            }
+            return emptyCells[Math.floor(Math.random() * emptyCells.length)];
+        }
+
+        function checkWin(player) {
+            const cells = document.getElementsByClassName('cell');
+            const winPatterns = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ];
+            return winPatterns.some(pattern => 
+                pattern.every(index => cells[index].innerHTML === player)
+            );
+        }
+
+        function isDraw() {
+            const cells = document.getElementsByClassName('cell');
+            return Array.from(cells).every(cell => cell.innerHTML !== '');
+        }
+
+        function updateScore() {
+            document.getElementById('playerScore').innerText = playerScore;
+            document.getElementById('botScore').innerText = botScore;
+        }
+
+        function resetBoard() {
+            const cells = document.getElementsByClassName('cell');
+            Array.from(cells).forEach(cell => {
+                cell.innerHTML = '';
+                cell.classList.remove('neon');
+            });
+            currentPlayer = 'X';
+        }
+    </script>
+</body>
+</html>
